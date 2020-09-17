@@ -85,7 +85,7 @@ public class TestMetaWithReplicasBasic extends MetaWithReplicasTestBase {
   @Test
   public void testReplicaCleanup() throws Exception {
     ZKWatcher zkw = TEST_UTIL.getZooKeeperWatcher();
-    List<String> metaReplicaZnodes = zkw.getMetaReplicaNodes();
+    List<String> metaReplicaZnodes = zkw.getRootReplicaNodes();
     assertEquals(3, metaReplicaZnodes.size());
 
     final HMaster master = TEST_UTIL.getMiniHBaseCluster().getMaster();
@@ -99,7 +99,7 @@ public class TestMetaWithReplicasBasic extends MetaWithReplicasTestBase {
     //wait until new master finished meta replica assignment logic
     TEST_UTIL.waitFor(30000, () -> newMaster.getMasterQuotaManager() != null);
     zkw = TEST_UTIL.getZooKeeperWatcher();
-    metaReplicaZnodes = zkw.getMetaReplicaNodes();
+    metaReplicaZnodes = zkw.getRootReplicaNodes();
     assertEquals(1, metaReplicaZnodes.size());
 
   }
