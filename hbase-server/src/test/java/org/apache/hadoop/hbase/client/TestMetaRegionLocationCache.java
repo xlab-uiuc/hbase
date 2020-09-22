@@ -43,6 +43,7 @@ import org.apache.hadoop.hbase.zookeeper.ZNodePaths;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 

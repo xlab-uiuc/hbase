@@ -407,11 +407,13 @@ public class ModifyTableProcedure
         for (Result result : resScanner) {
           tableRows.add(result.getRow());
         }
-        MetaTableAccessor.removeRegionReplicasFromMeta(
+        MetaTableAccessor.removeRegionReplicasFromCatalog(
           tableRows,
           newReplicaCount,
           oldReplicaCount - newReplicaCount,
-          connection);
+          connection,
+          TableName.isMetaTableName(newTableDescriptor.getTableName())
+            ? TableName.ROOT_TABLE_NAME : TableName.META_TABLE_NAME);
       }
     }
     if (newReplicaCount > oldReplicaCount) {
