@@ -41,13 +41,13 @@ import org.apache.hadoop.hbase.client.ClusterConnectionFactory;
 import org.apache.hadoop.hbase.protobuf.ReplicationProtobufUtil;
 import org.apache.hadoop.hbase.ScheduledChore;
 import org.apache.hadoop.hbase.Server;
-import org.apache.hadoop.hbase.ServerName;
 import org.apache.hadoop.hbase.security.User;
+import org.apache.hadoop.hbase.wal.WAL;
+import org.apache.hadoop.hbase.zookeeper.ZKListener;
+import org.apache.hadoop.hbase.ServerName;
 import org.apache.hadoop.hbase.security.UserProvider;
 import org.apache.hadoop.hbase.util.FutureUtils;
-import org.apache.hadoop.hbase.wal.WAL;
 import org.apache.hadoop.hbase.zookeeper.ZKClusterId;
-import org.apache.hadoop.hbase.zookeeper.ZKListener;
 import org.apache.hadoop.hbase.zookeeper.ZKUtil;
 import org.apache.hadoop.hbase.zookeeper.ZKWatcher;
 import org.apache.yetus.audience.InterfaceAudience;
@@ -118,6 +118,7 @@ public abstract class HBaseReplicationEndpoint extends BaseReplicationEndpoint
   private boolean fetchServersUseZk = false;
   private FetchServersChore fetchServersChore;
   private int shortOperationTimeout;
+  private boolean isReplicationServer = false;
 
   /*
    * Some implementations of HBaseInterClusterReplicationEndpoint may require instantiate different
@@ -295,6 +296,7 @@ public abstract class HBaseReplicationEndpoint extends BaseReplicationEndpoint
           .createBlockingRpcChannel(master, User.getCurrent(), shortOperationTimeout));
       ListReplicationSinkServersResponse resp = masterStub
         .listReplicationSinkServers(null, ListReplicationSinkServersRequest.newBuilder().build());
+      isReplicationServer = resp.getReplicationServer();
       return ProtobufUtil.toServerNameList(resp.getServerNameList());
     } catch (ServiceException | IOException e) {
       LOG.error("Peer {} fetches servers failed", ctx.getPeerId(), e);
@@ -308,6 +310,7 @@ public abstract class HBaseReplicationEndpoint extends BaseReplicationEndpoint
    * @return list of region server addresses or an empty list if the slave is unavailable
    */
   protected List<ServerName> fetchSlavesAddressesByZK() {
+    isReplicationServer = false;
     List<String> children = null;
     try {
       children = ZKUtil.listChildrenAndWatchForNewChildren(zkw, zkw.getZNodePaths().rsZNode);
@@ -365,7 +368,7 @@ public abstract class HBaseReplicationEndpoint extends BaseReplicationEndpoint
   }
 
   private SinkPeer createSinkPeer(ServerName serverName) throws IOException {
-    if (ReplicationUtils.isPeerClusterSupportReplicationOffload(conn)) {
+    if (isReplicationServer) {
       return new ReplicationServerSinkPeer(serverName, conn.getReplicationServerAdmin(serverName));
     } else {
       return new RegionServerSinkPeer(serverName, conn.getRegionServerAdmin(serverName));

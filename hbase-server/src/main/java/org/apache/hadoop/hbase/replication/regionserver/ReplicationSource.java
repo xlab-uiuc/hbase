@@ -155,6 +155,7 @@ public class ReplicationSource implements ReplicationSourceInterface {
   private int waitOnEndpointSeconds = -1;
 
   private Thread initThread;
+  private Thread fetchWALsThread;
 
   /**
    * WALs to replicate.
@@ -192,8 +193,9 @@ public class ReplicationSource implements ReplicationSourceInterface {
   @Override
   public void init(Configuration conf, FileSystem fs, Path walDir,
     ReplicationSourceController overallController, ReplicationQueueStorage queueStorage,
-    ReplicationPeer replicationPeer, Server server, String queueId, UUID clusterId,
-    WALFileLengthProvider walFileLengthProvider, MetricsSource metrics) throws IOException {
+    ReplicationPeer replicationPeer, Server server, ServerName producer, String queueId,
+    UUID clusterId, WALFileLengthProvider walFileLengthProvider, MetricsSource metrics)
+    throws IOException {
     this.server = server;
     this.conf = HBaseConfiguration.create(conf);
     this.walDir = walDir;
@@ -223,6 +225,35 @@ public class ReplicationSource implements ReplicationSourceInterface {
 
     this.abortOnError = this.conf.getBoolean("replication.source.regionserver.abort",
       true);
+
+    if (conf.getBoolean(HConstants.REPLICATION_OFFLOAD_ENABLE_KEY,
+      HConstants.REPLICATION_OFFLOAD_ENABLE_DEFAULT)) {
+      fetchWALsThread = new Thread(() -> {
+        for (; ; ) {
+          try {
+            this.queueStorage.getWALsInQueue(producer, getQueueId()).forEach(wal -> {
+              String logPrefix = AbstractFSWALProvider.getWALPrefixFromWALName(wal);
+              PriorityBlockingQueue<Path> queue = queues.get(logPrefix);
+              Path walPath = new Path(walDir, wal);
+              if (queue == null || !queue.contains(walPath)) {
+                enqueueLog(walPath);
+              }
+            });
+          } catch (ReplicationException e) {
+            LOG.warn("Failed to read wals in queue {}", getQueueId(), e);
+          }
+          try {
+            TimeUnit.SECONDS.sleep(10);
+          } catch (InterruptedException e) {
+            LOG.warn("Interrupted when sleep", e);
+            Thread.currentThread().interrupt();
+          }
+        }
+      }, "fetchWALsThread.replicationSource," + producer + "," + getQueueId());
+      fetchWALsThread.start();
+      LOG.info("Started a thread to fetch WALs from {}'s replication queue, queueId={}", producer,
+        getQueueId());
+    }
 
     LOG.info("queueId={}, ReplicationSource: {}, currentBandwidth={}", queueId,
       replicationPeer.getId(), this.currentBandwidth);

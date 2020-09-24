@@ -553,10 +553,4 @@ public interface MasterServices extends Server {
    * @return The state of the load balancer, or false if the load balancer isn't defined.
    */
   boolean isBalancerOn();
-
-  /**
-   * Get a list of servers' addresses for replication sink.
-   * @return a list of servers' address
-   */
-  List<ServerName> listReplicationSinkServers() throws IOException;
 }

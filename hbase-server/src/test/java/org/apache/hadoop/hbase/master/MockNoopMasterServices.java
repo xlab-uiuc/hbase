@@ -507,9 +507,4 @@ public class MockNoopMasterServices implements MasterServices {
   public boolean isBalancerOn() {
     return false;
   }
-
-  @Override
-  public List<ServerName> listReplicationSinkServers() throws IOException {
-    return null;
-  }
 }
