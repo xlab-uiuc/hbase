@@ -117,7 +117,7 @@ public class HBaseConfiguration extends Configuration {
    **/
   public static void merge(Configuration destConf, Configuration srcConf) {
     for (Map.Entry<String, String> e : srcConf) {
-      destConf.set(e.getKey(), e.getValue());
+      destConf.set(e.getKey(), e.getValue(), null, false); //CTEST
     }
   }
 
