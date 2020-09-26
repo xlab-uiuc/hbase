@@ -1443,7 +1443,7 @@
     <maven.warbucks.version>1.1.0</maven.warbucks.version>
     <os.maven.version>1.5.0.Final</os.maven.version>
     <spotbugs.version>3.1.11</spotbugs.version>
-    <surefire.version>2.22.2</surefire.version>
+    <surefire.version>3.0.0-M4</surefire.version>
     <wagon.ssh.version>2.12</wagon.ssh.version>
     <xml.maven.version>1.0.1</xml.maven.version>
     <hbase-thirdparty.version>2.2.1</hbase-thirdparty.version>
@@ -3458,10 +3458,13 @@
         </property>
       </activation>
       <properties>
-        <surefire.provider>surefire-junit4</surefire.provider>
         <surefire.skipFirstPart>false</surefire.skipFirstPart>
-        <surefire.skipSecondPart>true</surefire.skipSecondPart>
-        <surefire.firstPartGroups/>
+        <surefire.skipSecondPart>false</surefire.skipSecondPart>
+        <surefire.firstPartForkCount>1</surefire.firstPartForkCount>
+        <surefire.secondPartForkCount>2</surefire.secondPartForkCount>
+        <surefire.firstPartGroups>org.apache.hadoop.hbase.testclassification.SmallTests</surefire.firstPartGroups>
+        <surefire.secondPartGroups>org.apache.hadoop.hbase.testclassification.MediumTests</surefire.secondPartGroups>
+        <surefire.testFailureIgnore>true</surefire.testFailureIgnore>
       </properties>
     </profile>
     <!-- Profile for running clover. You need to have a clover license under ~/.clover.license for ${clover.version}
